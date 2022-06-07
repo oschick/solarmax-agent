@@ -157,7 +157,7 @@ field_map_inverter = {
 
     "CAC": "Startups",
     "KHR": "poweronhours",
-    "TKK": "inverter_operating_temp (°C)",
+    "TKK": "inverter_operating_temp (C)",
     "SAL": "Alarm_Codes",
     "SYS": "status_Code",
 }
