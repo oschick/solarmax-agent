@@ -13,12 +13,12 @@ inverter_ip = environ.get('INVERTER_IP')
 
 # 12345 should be the port of the inverter
 if environ.get('INVERTER_PORT'):
-    inverter_port = environ.get('INVERTER_PORT')
+    inverter_port = int(environ.get('INVERTER_PORT'))
 else:
     inverter_port = 12345
 
 mqtt_broker_ip = environ.get('MQTT_BROKER_IP')
-mqtt_broker_port = environ.get('MQTT_BROKER_PORT')
+mqtt_broker_port = int(environ.get('MQTT_BROKER_PORT'))
 mqtt_broker_auth = environ.get('MQTT_BROKER_AUTH')
 mqtt_inverter_topic = environ.get('MQTT_INVERTER_TOPIC')
 
