@@ -250,7 +250,7 @@ def connect_to_inverter(ip, port):
         s.connect((ip, port))
     except socket.error as e:
         print( 'Failed to create socket: Error code: ' + str(e))
-        pass
+        return False
         # sys.exit()
     return s
 
@@ -269,7 +269,21 @@ def read_data(sock, request):
     print ('received: ' + response)
     return response
 
-
+def generate_empty_data(map):
+    data = {}
+    for i in map:
+        if i == "SYS":
+            data[i] = {
+                "Value": "Keine Kommunikation",
+                "Description": map[i],
+                "Raw Value": "20000",
+                }
+        data[i] = {
+            "Value": "0",
+            "Description": map[i],
+            "Raw Value": "0",
+            }
+    return data
 
 def main():
     print ("starting...")
@@ -278,12 +292,16 @@ def main():
         try:
             inv_s = connect_to_inverter(ip= inverter_ip, port= inverter_port)
             print ("connected to inverter")
-            data = read_data(inv_s, req_data_inverter)
-            json_data = convert_to_json(map=field_map_inverter, data=data)
-            publish_message(topic=mqtt_inverter_topic, data=json_data, ip=mqtt_broker_ip, port=mqtt_broker_port, auth=mqtt_broker_auth)
-            inv_s.close()
-
-            time.sleep(10)
+            if inv_s:
+                data = read_data(inv_s, req_data_inverter)
+                json_data = convert_to_json(map=field_map_inverter, data=data)
+                publish_message(topic=mqtt_inverter_topic, data=json_data, ip=mqtt_broker_ip, port=mqtt_broker_port, auth=mqtt_broker_auth)
+                inv_s.close()
+                time.sleep(10)
+            else:
+                json_data = generate_empty_data(map=field_map_inverter)
+                publish_message(topic=mqtt_inverter_topic, data=json_data, ip=mqtt_broker_ip, port=mqtt_broker_port, auth=mqtt_broker_auth)
+                time.sleep(30)
 
         except Exception as ex:
             template = "An exception of type {0} occured. Arguments:\n{1!r}"
