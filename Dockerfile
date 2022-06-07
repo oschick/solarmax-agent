@@ -4,7 +4,9 @@ RUN addgroup --gid 1337 app && adduser --uid 1337 --gid 1337 --disabled-password
 
 COPY ./src /app
 
-RUN pip install -r ./requirements.txt
+COPY ./requirements.txt /app
+
+RUN pip install -r /app/requirements.txt
 
 RUN chown app:app /app
 
