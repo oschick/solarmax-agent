@@ -194,7 +194,7 @@ def publish_message(topic, data, ip, port, auth):
     --- publishs to the """
     ## following line is for local broker
     # client.publish(topic, json.dumps(data))
-    publish.single(topic, payload=json.dumps(data), hostname=ip, port=port, auth=auth, client_id="Energymeter",)
+    publish.single(topic, payload=json.dumps(data), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
     print ('published: ' + json.dumps(data) + '\n' + 'to topic: ' + topic)
     return
 
