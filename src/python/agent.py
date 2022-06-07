@@ -278,11 +278,12 @@ def generate_empty_data(map):
                 "Description": map[i],
                 "Raw Value": "20000",
                 }
-        data[i] = {
-            "Value": "0",
-            "Description": map[i],
-            "Raw Value": "0",
-            }
+        else:
+            data[i] = {
+                "Value": "0",
+                "Description": map[i],
+                "Raw Value": "0",
+                }
     return data
 
 def main():
@@ -291,8 +292,8 @@ def main():
     while True:
         try:
             inv_s = connect_to_inverter(ip= inverter_ip, port= inverter_port)
-            print ("connected to inverter")
             if inv_s:
+                print ("connected to inverter")
                 data = read_data(inv_s, req_data_inverter)
                 json_data = convert_to_json(map=field_map_inverter, data=data)
                 publish_message(topic=mqtt_inverter_topic, data=json_data, ip=mqtt_broker_ip, port=mqtt_broker_port, auth=mqtt_broker_auth)
