@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 RUN addgroup --gid 1337 app && adduser --uid 1337 --gid 1337 --disabled-password --gecos "App User" app
 
-COPY ./src /app
+COPY ./src/python /app
 
 COPY ./requirements.txt /app
 
