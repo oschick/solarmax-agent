@@ -22,7 +22,7 @@ mqtt_broker_ip = environ.get('MQTT_BROKER_IP')
 mqtt_broker_port = int(environ.get('MQTT_BROKER_PORT'))
 mqtt_broker_auth = environ.get('MQTT_BROKER_AUTH')
 if mqtt_broker_auth:
-    auth = json.loads(mqtt_broker_auth)
+    mqtt_broker_auth = json.loads(mqtt_broker_auth)
 mqtt_inverter_topic = environ.get('MQTT_INVERTER_TOPIC')
 
 # PAC = "PAC" # AC power (W)
