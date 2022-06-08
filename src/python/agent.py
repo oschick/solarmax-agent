@@ -1,5 +1,6 @@
 # coding=utf-8
 import paho.mqtt.publish as publish
+import paho.mqtt.client as mqtt
 import socket
 import time
 import json
@@ -20,6 +21,8 @@ else:
 mqtt_broker_ip = environ.get('MQTT_BROKER_IP')
 mqtt_broker_port = int(environ.get('MQTT_BROKER_PORT'))
 mqtt_broker_auth = environ.get('MQTT_BROKER_AUTH')
+if mqtt_broker_auth:
+    auth = json.loads(mqtt_broker_auth)
 mqtt_inverter_topic = environ.get('MQTT_INVERTER_TOPIC')
 
 # PAC = "PAC" # AC power (W)
@@ -194,8 +197,18 @@ def publish_message(topic, data, ip, port, auth):
     --- publishs to the """
     ## following line is for local broker
     # client.publish(topic, json.dumps(data))
-    publish.single(topic, payload=json.dumps(data), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
+    client = mqtt.Client(client_id="Solarmax_Inverter_")
+    if auth:
+        client.username_pw_set(username=auth["username"], password=auth["password"])
+    client.connect(ip, port, 60)
+    client.publish(topic + "/Full_Status", json.dumps(data))
+    # client.publish(topic, json.dumps(data))
+    # publish.single(topic, payload=json.dumps(data), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
+    for i in data:
+        # publish.single(topic+"/"+field_map_s0[i], payload=str(data[i]["Value"]), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
+        client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"])
     print ('published: ' + json.dumps(data) + '\n' + 'to topic: ' + topic)
+    client.disconnect()
     return
 
 
