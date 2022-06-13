@@ -1,4 +1,5 @@
 # coding=utf-8
+from datetime import datetime
 import paho.mqtt.publish as publish
 import paho.mqtt.client as mqtt
 import socket
@@ -273,7 +274,8 @@ def read_data(sock, request):
     data_received = False
     response = ''
     print ('waiting for response')
-    while not data_received:
+    t1 = datetime.now()
+    while not data_received or ((datetime.now() - t1).total_seconds() > 2):
         buf = sock.recv(1024)
         print ('received: ' + str(buf))
         if len(buf) > 0:
