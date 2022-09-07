@@ -206,8 +206,15 @@ def publish_message(topic, data, ip, port, auth):
     # client.publish(topic, json.dumps(data))
     # publish.single(topic, payload=json.dumps(data), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
     for i in data:
-        # publish.single(topic+"/"+field_map_s0[i], payload=str(data[i]["Value"]), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
-        client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"])
+        if i == "KDY" or "KMT" or "KYR" or "KT0" or "KHR" or "CAC":
+            if int(data["KT0"]["Value"]) == 0:
+                continue
+            else:
+                client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"], retain=True )
+        else:
+            
+            # publish.single(topic+"/"+field_map_s0[i], payload=str(data[i]["Value"]), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
+            client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"])
     print ('published: ' + json.dumps(data) + '\n' + 'to topic: ' + topic)
     client.disconnect()
     return
