@@ -206,7 +206,7 @@ def publish_message(topic, data, ip, port, auth):
     # client.publish(topic, json.dumps(data))
     # publish.single(topic, payload=json.dumps(data), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
     for i in data:
-        if i == "KDY" or "KMT" or "KYR" or "KT0" or "KHR" or "CAC":
+        if i in ["KDY", "KMT", "KYR", "KT0", "KHR", "CAC"]:
             if int(data["KT0"]["Value"]) == 0:
                 continue
             else:
