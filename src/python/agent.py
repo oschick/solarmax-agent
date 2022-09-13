@@ -216,6 +216,7 @@ def publish_message(topic, data, ip, port, auth):
     for i in data:
         # publish.single(topic+"/"+field_map_s0[i], payload=str(data[i]["Value"]), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
         client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"])
+        time.sleep(0.005)
     print ('published: ' + json.dumps(data) + '\n' + 'to topic: ' + topic)
     client.disconnect()
     return
