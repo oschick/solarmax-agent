@@ -12,7 +12,6 @@ from os import environ
 
 
 inverter_ip = environ.get('INVERTER_IP')
-last_good = {}
 
 # 12345 should be the port of the inverter
 if environ.get('INVERTER_PORT'):
@@ -325,6 +324,7 @@ def generate_empty_data(map, data = {}):
 def main():
     print ("starting...")
     req_data_inverter = build_request(map=field_map_inverter) 
+    last_good = {}
     while True:
         try:
             inv_s = connect_to_inverter(ip= inverter_ip, port= inverter_port)
