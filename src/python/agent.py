@@ -12,12 +12,19 @@ from os import environ
 
 
 inverter_ip = environ.get('INVERTER_IP')
+last_good = {}
 
 # 12345 should be the port of the inverter
 if environ.get('INVERTER_PORT'):
     inverter_port = int(environ.get('INVERTER_PORT'))
 else:
     inverter_port = 12345
+    
+    
+if environ.get("UPDATE_TIME"):
+    update_time = int(environ.get("UPDATE_TIME"))
+else:
+    update_time = 5
 
 mqtt_broker_ip = environ.get('MQTT_BROKER_IP')
 mqtt_broker_port = int(environ.get('MQTT_BROKER_PORT'))
@@ -25,6 +32,8 @@ mqtt_broker_auth = environ.get('MQTT_BROKER_AUTH')
 if mqtt_broker_auth:
     mqtt_broker_auth = json.loads(mqtt_broker_auth)
 mqtt_inverter_topic = environ.get('MQTT_INVERTER_TOPIC')
+
+
 
 # PAC = "PAC" # AC power (W)
 # PD01 = "PD01" # DC Power String 1 (W)
@@ -198,7 +207,7 @@ def publish_message(topic, data, ip, port, auth):
     --- publishs to the """
     ## following line is for local broker
     # client.publish(topic, json.dumps(data))
-    client = mqtt.Client(client_id="Solarmax_Inverter_")
+    client = mqtt.Client(client_id="Solarmax_Inverter")
     if auth:
         client.username_pw_set(username=auth["username"], password=auth["password"])
     client.connect(ip, port, 60)
@@ -206,15 +215,8 @@ def publish_message(topic, data, ip, port, auth):
     # client.publish(topic, json.dumps(data))
     # publish.single(topic, payload=json.dumps(data), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
     for i in data:
-        if i in ["KDY", "KMT", "KYR", "KT0", "KHR", "CAC"]:
-            if int(data["KT0"]["Value"]) == 0:
-                continue
-            else:
-                client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"], retain=True )
-                continue
-        else:
-            # publish.single(topic+"/"+field_map_s0[i], payload=str(data[i]["Value"]), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
-            client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"])
+        # publish.single(topic+"/"+field_map_s0[i], payload=str(data[i]["Value"]), hostname=ip, port=port, auth=json.loads(auth), client_id="Energymeter",)
+        client.publish(topic+"/"+(field_map_inverter[i]+"_("+i+")"), data[i]["Value"])
     print ('published: ' + json.dumps(data) + '\n' + 'to topic: ' + topic)
     client.disconnect()
     return
@@ -291,22 +293,34 @@ def read_data(sock, request):
     print ('received: ' + response)
     return response
 
-def generate_empty_data(map):
-    data = {}
-    for i in map:
-        if i == "SYS":
-            data[i] = {
-                "Value": "Keine Kommunikation",
-                "Description": map[i],
-                "Raw Value": "20000",
-                }
-        else:
-            data[i] = {
-                "Value": "0",
-                "Description": map[i],
-                "Raw Value": "0",
-                }
-    return data
+def generate_empty_data(map, data = {}):
+    if data:
+        for i in data:
+            if i in ["KDY", "KMT", "KYR", "KT0", "KHR", "CAC"]:
+                continue
+            elif i == "SYS":
+                data[i]["Value"] = map_data(i, 20000)
+            else:
+                data[i]["Raw Value"] = 0
+                data[i]["Value"]: map_data(i, 0)
+                continue
+        return data
+    else:
+        data = {}
+        for i in map:
+            if i == "SYS":
+                data[i] = {
+                    "Value": "Keine Kommunikation",
+                    "Description": map[i],
+                    "Raw Value": "20000",
+                    }
+            else:
+                data[i] = {
+                    "Value": "0",
+                    "Description": map[i],
+                    "Raw Value": "0",
+                    }
+        return data
 
 def main():
     print ("starting...")
@@ -318,11 +332,14 @@ def main():
                 print ("connected to inverter")
                 data = read_data(inv_s, req_data_inverter)
                 json_data = convert_to_json(map=field_map_inverter, data=data)
+                
                 publish_message(topic=mqtt_inverter_topic, data=json_data, ip=mqtt_broker_ip, port=mqtt_broker_port, auth=mqtt_broker_auth)
                 inv_s.close()
-                time.sleep(10)
+                time.sleep(update_time)
+                last_good = json_data 
             else:
-                json_data = generate_empty_data(map=field_map_inverter)
+                if last_good:
+                    json_data = generate_empty_data(map=field_map_inverter, data=last_good)
                 publish_message(topic=mqtt_inverter_topic, data=json_data, ip=mqtt_broker_ip, port=mqtt_broker_port, auth=mqtt_broker_auth)
                 time.sleep(30)
 
