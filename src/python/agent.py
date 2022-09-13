@@ -340,8 +340,10 @@ def main():
             else:
                 if last_good:
                     json_data = generate_empty_data(map=field_map_inverter, data=last_good)
+                else: 
+                    json_data = generate_empty_data(map=field_map_inverter)
                 publish_message(topic=mqtt_inverter_topic, data=json_data, ip=mqtt_broker_ip, port=mqtt_broker_port, auth=mqtt_broker_auth)
-                time.sleep(30)
+                time.sleep(300)
 
         except Exception as ex:
             template = "An exception of type {0} occured. Arguments:\n{1!r}"
