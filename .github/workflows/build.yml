@@ -4,8 +4,21 @@ on:
   push:
     branches: [ master, main, develop ]
     tags: [ 'v*' ]
-  pull_request:
-    branches: [ master, main ]
+  pull_re    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=${{ github.event.client_payload.version }},enable=${{ github.event_name == 'repository_dispatch' && github.event.client_payload.version != '' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'repository_dispatch' && !github.event.client_payload.prerelease }}ranches: [ master, main ]
   repository_dispatch:
     types: [release-created]
   workflow_dispatch:
@@ -203,9 +216,11 @@ jobs:
     - name: Update addon version and copy files
       if: ${{ env.ADDON_REPO_TOKEN != '' }}
       run: |
-        # Extract version from tag or use commit SHA
+        # Extract version from tag, repository dispatch payload, or use commit SHA
         if [[ $GITHUB_REF == refs/tags/* ]]; then
           VERSION=${GITHUB_REF#refs/tags/v}
+        elif [[ "${{ github.event_name }}" == "repository_dispatch" && -n "${{ github.event.client_payload.version }}" ]]; then
+          VERSION="${{ github.event.client_payload.version }}"
         else
           VERSION=$(echo ${{ github.sha }} | cut -c1-7)
         fi
@@ -234,12 +249,12 @@ jobs:
         git diff --staged --quiet || git commit -m "Update Solarmax MQTT addon to ${{ github.sha }}"
         git push
 
-  # Create GitHub release on tag
+  # Create GitHub release on tag (but not for repository_dispatch since release.yml already created it)
   release:
     name: Create Release
     runs-on: ubuntu-latest
     needs: [docker, home-assistant-addon]
-    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'repository_dispatch' && github.event.client_payload.ref)
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'repository_dispatch'
     
     steps:
     - name: Checkout repository
