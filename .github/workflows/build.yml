@@ -4,21 +4,8 @@ on:
   push:
     branches: [ master, main, develop ]
     tags: [ 'v*' ]
-  pull_re    - name: Extract metadata for Docker
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=tag
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=raw,value=${{ github.event.client_payload.version }},enable=${{ github.event_name == 'repository_dispatch' && github.event.client_payload.version != '' }}
-          type=raw,value=latest,enable=${{ github.event_name == 'repository_dispatch' && !github.event.client_payload.prerelease }}ranches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
   repository_dispatch:
     types: [release-created]
   workflow_dispatch:
@@ -132,6 +119,8 @@ jobs:
           type=semver,pattern={{major}}
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=${{ github.event.client_payload.version }},enable=${{ github.event_name == 'repository_dispatch' && github.event.client_payload.version != '' }}
+          type=raw,value=latest,enable=${{ github.event_name == 'repository_dispatch' && !github.event.client_payload.prerelease }}
           
     - name: Build and push Docker image
       uses: docker/build-push-action@v6
