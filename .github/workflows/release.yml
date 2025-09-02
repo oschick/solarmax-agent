@@ -94,7 +94,7 @@ jobs:
         
         # Only push master if there were version changes
         if [ "${{ env.version_changed }}" = "true" ]; then
-          git push origin master
+          git push origin HEAD:refs/heads/master
         fi
         
     - name: Create GitHub Release
