@@ -29,6 +29,6 @@ LABEL \
     io.hass.description="Solarmax inverter to MQTT bridge with Home Assistant auto-discovery" \
     io.hass.arch="armhf|aarch64|amd64|armv7|i386" \
     io.hass.type="addon" \
-    io.hass.version="1.0.0"
+    io.hass.version="1.0.1"
 
 CMD ["/app/run.sh"]
