@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  solarmax-agent:
+    build: .
+    container_name: solarmax-agent
+    restart: unless-stopped
+    environment:
+      - INVERTER_IP=${INVERTER_IP}
+      - INVERTER_PORT=${INVERTER_PORT:-12345}
+      - UPDATE_TIME=${UPDATE_TIME:-5}
+      - MQTT_BROKER_IP=${MQTT_BROKER_IP}
+      - MQTT_BROKER_PORT=${MQTT_BROKER_PORT:-1883}
+      - MQTT_INVERTER_TOPIC=${MQTT_INVERTER_TOPIC}
+      - MQTT_BROKER_AUTH=${MQTT_BROKER_AUTH}
+    networks:
+      - monitoring
+    depends_on:
+      - mqtt-broker
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_logs:

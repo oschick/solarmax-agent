@@ -52,3 +52,45 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# Modern Python additions
+*$py.class
+.eggs/
+wheels/
+share/python-wheels/
+MANIFEST
+*.manifest
+*.spec
+.nox/
+.coverage.*
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual environments (modern)
+.venv
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local configuration
+.env
+.env.local
+config.local.json
+
+# MQTT test files
+test_*.json
+

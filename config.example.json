@@ -1,0 +1,15 @@
+{
+  "inverter_ip": "192.168.1.100",
+  "inverter_port": 12345,
+  "update_interval": 30,
+  "mqtt_host": "192.168.1.10",
+  "mqtt_port": 1883,
+  "mqtt_username": "homeassistant",
+  "mqtt_password": "your_password_here",
+  "device_name": "Solarmax Inverter",
+  "device_id": "solarmax_inverter_01",
+  "home_assistant_discovery": true,
+  "discovery_prefix": "homeassistant",
+  "mqtt_topic_prefix": "solarmax",
+  "availability_topic": "solarmax/availability"
+}
