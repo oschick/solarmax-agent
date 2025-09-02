@@ -1,5 +1,5 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:15.0.7
-# https://github.com/hassio-addons/addon-base
+ARG BUILD_FROM=ghcr.io/home-assistant/base:latest
+# https://github.com/home-assistant/docker-base
 
 FROM $BUILD_FROM
 
@@ -11,7 +11,7 @@ ARG BUILD_ARCH=amd64
 
 RUN \
     apk add --no-cache \
-        python3=~3.11 \
+        python3 \
         py3-pip \
     \
     && pip3 install --no-cache-dir --find-links \
