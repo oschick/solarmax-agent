@@ -99,17 +99,17 @@ jobs:
         
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: "v${{ github.event.inputs.version }}"
         name: "Release v${{ github.event.inputs.version }}"
         body_path: CHANGELOG.md
         draft: false
         prerelease: ${{ github.event.inputs.prerelease }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Trigger addon repository update
-      if: "!github.event.inputs.prerelease"
-      run: |
-        # This will trigger the main build workflow which will update the addon repo
-        echo "🚀 Release created, addon repository will be updated automatically"
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        event-type: release-created
+        client-payload: '{"ref": "v${{ github.event.inputs.version }}", "version": "${{ github.event.inputs.version }}", "prerelease": ${{ github.event.inputs.prerelease }}}'
