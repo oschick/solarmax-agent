@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.2.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Validate version
+      run: |
+        if [[ ! "${{ github.event.inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "❌ Version must be in format X.Y.Z"
+          exit 1
+        fi
+        echo "✅ Version format is valid"
+        
+    - name: Update version in config.json
+      run: |
+        sed -i 's/"version": "[^"]*"/"version": "${{ github.event.inputs.version }}"/' config.json
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add config.json
+        git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
+        
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        if [ -z "$LAST_TAG" ]; then
+          echo "## 🎉 Initial Release" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "This is the first release of the Solarmax to MQTT Agent with Home Assistant integration." >> CHANGELOG.md
+        else
+          echo "## 🚀 What's Changed" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          
+          # Generate changelog from commit messages
+          git log --pretty=format:"- %s" $LAST_TAG..HEAD >> CHANGELOG.md
+          
+          # Add contributors
+          echo "" >> CHANGELOG.md
+          echo "## 👥 Contributors" >> CHANGELOG.md
+          git log --pretty=format:"- @%an" $LAST_TAG..HEAD | sort | uniq >> CHANGELOG.md
+        fi
+        
+        echo "## 📦 Docker Images" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "- \`ghcr.io/${{ github.repository }}:${{ github.event.inputs.version }}\`" >> CHANGELOG.md
+        echo "- \`ghcr.io/${{ github.repository }}:latest\`" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "## 🏠 Home Assistant Addon" >> CHANGELOG.md
+        echo "Available in the addon repository after this release." >> CHANGELOG.md
+        
+    - name: Create and push tag
+      run: |
+        git tag "v${{ github.event.inputs.version }}"
+        git push origin "v${{ github.event.inputs.version }}"
+        git push origin master
+        
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: "v${{ github.event.inputs.version }}"
+        release_name: "Release v${{ github.event.inputs.version }}"
+        body_path: CHANGELOG.md
+        draft: false
+        prerelease: ${{ github.event.inputs.prerelease }}
+        
+    - name: Trigger addon repository update
+      if: "!github.event.inputs.prerelease"
+      run: |
+        # This will trigger the main build workflow which will update the addon repo
+        echo "🚀 Release created, addon repository will be updated automatically"

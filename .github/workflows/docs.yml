@@ -1,0 +1,88 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - '**.md'
+      - 'config.json'
+      - 'src/**'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - '**.md'
+
+jobs:
+  markdown-lint:
+    name: Markdown Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install markdownlint
+      run: npm install -g markdownlint-cli
+      
+    - name: Lint Markdown files
+      run: |
+        markdownlint *.md --ignore node_modules || echo "⚠️ Markdown style issues found"
+
+  link-check:
+    name: Check Links
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Check links in markdown files
+      uses: gaurav-nelson/github-action-markdown-link-check@v1
+      with:
+        use-quiet-mode: 'yes'
+        use-verbose-mode: 'yes'
+        config-file: '.github/mlc_config.json'
+
+  docs-sync:
+    name: Sync Documentation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Generate addon documentation
+      run: |
+        # Extract addon information from config.json
+        python3 -c "
+        import json
+        
+        with open('config.json') as f:
+            config = json.load(f)
+            
+        # Update README_ADDON.md with current config
+        print(f'Addon: {config[\"name\"]} v{config[\"version\"]}')
+        print(f'Description: {config[\"description\"]}')
+        print(f'Architectures: {config[\"arch\"]}')
+        "
+        
+    - name: Check for documentation updates needed
+      run: |
+        # Check if config.json schema has changed and update docs
+        if git diff --name-only HEAD~1 HEAD | grep -q "config.json"; then
+          echo "📝 Config changed, documentation may need updates"
+          # Add any automatic documentation generation here
+        fi
+        
+    - name: Validate README examples
+      run: |
+        # Extract and validate JSON examples from README files
+        grep -o '{.*}' README*.md | while read json_block; do
+          echo "$json_block" | python -m json.tool > /dev/null || echo "⚠️ Invalid JSON in README"
+        done

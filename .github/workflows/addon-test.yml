@@ -1,0 +1,167 @@
+name: Home Assistant Addon Test
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'config.json'
+      - 'Dockerfile.hassio'
+      - 'run.sh'
+      - 'src/**'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'config.json'
+      - 'Dockerfile.hassio'
+      - 'run.sh'
+      - 'src/**'
+
+jobs:
+  addon-validation:
+    name: Validate Addon Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Validate addon config
+      run: |
+        # Check if config.json is valid JSON
+        python -m json.tool config.json > /dev/null
+        echo "✅ config.json is valid JSON"
+        
+        # Check required fields
+        python -c "
+        import json
+        with open('config.json') as f:
+            config = json.load(f)
+        
+        required_fields = ['name', 'version', 'slug', 'description', 'arch', 'startup']
+        for field in required_fields:
+            assert field in config, f'Missing required field: {field}'
+        
+        assert isinstance(config['arch'], list), 'arch must be a list'
+        assert len(config['arch']) > 0, 'arch must not be empty'
+        
+        print('✅ All required fields present and valid')
+        "
+        
+    - name: Check Dockerfile
+      run: |
+        if [ -f "Dockerfile.hassio" ]; then
+          echo "✅ Dockerfile.hassio exists"
+          # Basic syntax check
+          docker run --rm -i hadolint/hadolint < Dockerfile.hassio || echo "⚠️ Dockerfile has style issues"
+        else
+          echo "❌ Dockerfile.hassio missing"
+          exit 1
+        fi
+        
+    - name: Check run script
+      run: |
+        if [ -f "run.sh" ]; then
+          echo "✅ run.sh exists"
+          # Check if executable
+          test -x run.sh && echo "✅ run.sh is executable" || echo "⚠️ run.sh not executable"
+          # Basic shell syntax check
+          bash -n run.sh && echo "✅ run.sh syntax is valid"
+        else
+          echo "❌ run.sh missing"
+          exit 1
+        fi
+
+  addon-build-test:
+    name: Test Addon Build
+    runs-on: ubuntu-latest
+    needs: addon-validation
+    strategy:
+      matrix:
+        arch: ["amd64", "aarch64"]  # Test main architectures
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Test build addon for ${{ matrix.arch }}
+      run: |
+        # Build the addon for specific architecture
+        docker buildx build \
+          --platform linux/${{ matrix.arch == 'aarch64' && 'arm64' || matrix.arch }} \
+          --file Dockerfile.hassio \
+          --tag test-addon:${{ matrix.arch }} \
+          --load \
+          .
+        echo "✅ Successfully built addon for ${{ matrix.arch }}"
+
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: addon-build-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Start test environment
+      run: |
+        # Create a test docker-compose with mock services
+        cat > docker-compose.test.yml << EOF
+        version: '3.8'
+        services:
+          mosquitto:
+            image: eclipse-mosquitto:2.0
+            ports:
+              - "1883:1883"
+            volumes:
+              - ./test-mosquitto.conf:/mosquitto/config/mosquitto.conf
+            
+          solarmax-mock:
+            image: alpine/socat
+            command: socat TCP-LISTEN:12345,fork,reuseaddr EXEC:'echo test-response'
+            ports:
+              - "12345:12345"
+              
+          solarmax-agent:
+            build:
+              context: .
+              dockerfile: Dockerfile
+            environment:
+              - INVERTER_IP=solarmax-mock
+              - MQTT_BROKER_IP=mosquitto
+              - MQTT_INVERTER_TOPIC=test/solarmax
+            depends_on:
+              - mosquitto
+              - solarmax-mock
+        EOF
+        
+        # Create basic mosquitto config
+        cat > test-mosquitto.conf << EOF
+        listener 1883
+        allow_anonymous true
+        EOF
+        
+    - name: Run integration test
+      run: |
+        # Start the test environment
+        docker-compose -f docker-compose.test.yml up -d
+        
+        # Wait for services to be ready
+        sleep 10
+        
+        # Check if services are running
+        docker-compose -f docker-compose.test.yml ps
+        
+        # Check logs for any obvious errors
+        docker-compose -f docker-compose.test.yml logs solarmax-agent
+        
+        # Cleanup
+        docker-compose -f docker-compose.test.yml down
+        
+        echo "✅ Integration test completed"
