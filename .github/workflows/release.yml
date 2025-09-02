@@ -78,12 +78,12 @@ jobs:
         git push origin master
         
     - name: Create GitHub Release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: "v${{ github.event.inputs.version }}"
-        release_name: "Release v${{ github.event.inputs.version }}"
+        name: "Release v${{ github.event.inputs.version }}"
         body_path: CHANGELOG.md
         draft: false
         prerelease: ${{ github.event.inputs.prerelease }}
