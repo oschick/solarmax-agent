@@ -108,8 +108,23 @@ jobs:
         draft: false
         prerelease: ${{ github.event.inputs.prerelease }}
         
-    - name: Trigger addon repository update
-      if: "!github.event.inputs.prerelease"
+    - name: Debug repository dispatch
       run: |
-        # This will trigger the main build workflow which will update the addon repo
-        echo "🚀 Release created, addon repository will be updated automatically"
+        echo "🔍 Preparing to trigger repository dispatch..."
+        echo "Event type: release-created"
+        echo "Repository: ${{ github.repository }}"
+        echo "Version: ${{ github.event.inputs.version }}"
+        echo "Prerelease: ${{ github.event.inputs.prerelease }}"
+        echo "Token available: ${{ secrets.PAT_TOKEN != '' || secrets.GITHUB_TOKEN != '' }}"
+        
+    - name: Trigger addon repository update
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        event-type: release-created
+        client-payload: |
+          {
+            "ref": "v${{ github.event.inputs.version }}",
+            "version": "${{ github.event.inputs.version }}",
+            "prerelease": ${{ github.event.inputs.prerelease }}
+          }
