@@ -34,11 +34,21 @@ jobs:
         
     - name: Update version in config.json
       run: |
+        # Update version in config.json
         sed -i 's/"version": "[^"]*"/"version": "${{ github.event.inputs.version }}"/' config.json
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add config.json
-        git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
+        
+        # Check if there are any changes
+        if git diff --quiet config.json; then
+          echo "⚠️  Version is already ${{ github.event.inputs.version }} in config.json"
+          echo "version_changed=false" >> $GITHUB_ENV
+        else
+          echo "✅ Updated version to ${{ github.event.inputs.version }}"
+          echo "version_changed=true" >> $GITHUB_ENV
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config.json
+          git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
+        fi
         
     - name: Generate changelog
       id: changelog
@@ -73,9 +83,19 @@ jobs:
         
     - name: Create and push tag
       run: |
+        # Check if tag already exists
+        if git rev-parse "v${{ github.event.inputs.version }}" >/dev/null 2>&1; then
+          echo "❌ Tag v${{ github.event.inputs.version }} already exists"
+          exit 1
+        fi
+        
         git tag "v${{ github.event.inputs.version }}"
         git push origin "v${{ github.event.inputs.version }}"
-        git push origin master
+        
+        # Only push master if there were version changes
+        if [ "${{ env.version_changed }}" = "true" ]; then
+          git push origin master
+        fi
         
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
