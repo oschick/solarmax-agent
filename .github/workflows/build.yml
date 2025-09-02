@@ -173,6 +173,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Checkout addon repository
+      if: ${{ secrets.ADDON_REPO_TOKEN }}
       uses: actions/checkout@v4
       with:
         repository: ${{ github.repository_owner }}/hassio-addons
@@ -180,6 +181,7 @@ jobs:
         path: ./addon-repo
         
     - name: Update addon version and copy files
+      if: ${{ secrets.ADDON_REPO_TOKEN }}
       run: |
         # Extract version from tag or use commit SHA
         if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -203,6 +205,7 @@ jobs:
         sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" ./addon-repo/solarmax-mqtt/config.json
         
     - name: Commit and push changes
+      if: ${{ secrets.ADDON_REPO_TOKEN }}
       run: |
         cd ./addon-repo
         git config user.name "github-actions[bot]"
