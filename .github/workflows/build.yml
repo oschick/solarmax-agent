@@ -6,6 +6,8 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ master, main ]
+  repository_dispatch:
+    types: [release-created]
   workflow_dispatch:
     inputs:
       ref:
@@ -33,6 +35,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -86,6 +90,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -138,6 +144,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
     - name: Get information
       id: info
@@ -173,7 +181,7 @@ jobs:
     name: Publish HA Addon
     runs-on: ubuntu-latest
     needs: [test, home-assistant-addon]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: (github.ref == 'refs/heads/master' && github.event_name == 'push') || github.event_name == 'repository_dispatch'
     
     env:
       ADDON_REPO_TOKEN: ${{ secrets.ADDON_REPO_TOKEN }}
@@ -181,6 +189,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
     - name: Checkout addon repository
       if: ${{ env.ADDON_REPO_TOKEN != '' }}
@@ -229,11 +239,13 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: [docker, home-assistant-addon]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'repository_dispatch' && github.event.client_payload.ref)
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
     - name: Generate changelog
       id: changelog
