@@ -150,18 +150,18 @@ jobs:
     - name: Run integration test
       run: |
         # Start the test environment
-        docker-compose -f docker-compose.test.yml up -d
+        docker compose -f docker-compose.test.yml up -d
         
         # Wait for services to be ready
         sleep 10
         
         # Check if services are running
-        docker-compose -f docker-compose.test.yml ps
+        docker compose -f docker-compose.test.yml ps
         
         # Check logs for any obvious errors
-        docker-compose -f docker-compose.test.yml logs solarmax-agent
+        docker compose -f docker-compose.test.yml logs solarmax-agent
         
         # Cleanup
-        docker-compose -f docker-compose.test.yml down
+        docker compose -f docker-compose.test.yml down
         
         echo "✅ Integration test completed"
