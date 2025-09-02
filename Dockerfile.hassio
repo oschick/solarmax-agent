@@ -14,7 +14,7 @@ RUN \
         python3 \
         py3-pip \
     \
-    && pip3 install --no-cache-dir --find-links \
+    && pip3 install --no-cache-dir --break-system-packages --find-links \
         "https://wheels.home-assistant.io/alpine-$(cut -d '.' -f 1-2 /etc/alpine-release)/$(apk --print-arch)/" \
         "paho-mqtt>=2.1.0"
 
