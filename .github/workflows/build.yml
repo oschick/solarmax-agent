@@ -34,7 +34,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
@@ -89,7 +89,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
@@ -145,7 +145,7 @@ jobs:
         
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
@@ -190,13 +190,13 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
     - name: Checkout addon repository
       if: ${{ env.ADDON_REPO_TOKEN != '' }}
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: ${{ github.repository_owner }}/hassio-addons
         token: ${{ secrets.ADDON_REPO_TOKEN }}
@@ -247,7 +247,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.event.inputs.ref || github.ref }}
       
